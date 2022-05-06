@@ -1,35 +1,32 @@
 const ENV = {
-    ObsWebsocketAddress: 'localhost:4444',
-    ObsWebsocketPassword: 'masterkey',
-    ObsSourceName: 'Chat Bot Audio',
-    TwitchUsername: 'sergiocabral_com',
-    TwitchPassword: 'oauth:swulwzgr60gvfqekcb5nimw6cargdl'
+    TwitchUsername: 'Cabr0nCoin',
+    TwitchPassword: 'sem senha',
+    Channels: [ 'sergiocabral_com' ]
 }
 
+const WORDS = [
+    "incrivel",
+    "doideira",
+    "loucura",
+    "acredito"
+]
+
+const PHRASES = [
+    "inacreditável, de fato {0}",
+    '{0} cê loko',
+    'que isso mano',
+    'podecrê',
+    'LUL LUL LUL LUL'
+]
+
 const tmi = require('tmi.js');
-const OBSWebSocket = require('obs-websocket-js');
 
 var global = {
     /**
-     * @type {OBSWebSocket}
-     */
-    obs: null,
-
-    /**
      * @type {tmi.Client}
      */
-     irc: null
+    irc: null
 };
-
-async function connectToObs() {
-    const obs = new OBSWebSocket();
-    await obs.connect({
-        address: ENV.ObsWebsocketAddress,
-        password: ENV.ObsWebsocketPassword,
-    });
-    console.log('Websocket connected.');
-    return obs;
-}
 
 async function connectToTwitchChat() {
     const irc = new tmi.Client({
@@ -37,7 +34,7 @@ async function connectToTwitchChat() {
             username: ENV.TwitchUsername,
             password: ENV.TwitchPassword,
         },
-        channels: [ ENV.TwitchUsername ]
+        channels: ENV.Channels
     })
     await irc.connect();
     console.log('Twitch Chat connected.');
@@ -45,24 +42,17 @@ async function connectToTwitchChat() {
 }
 
 async function onMessage(channel, tags, message, self) {
-    /**
-     * @type {OBSWebSocket}
-     */
-    const obs = this.obs;
-    const slug = message.toLowerCase();
-    if(slug == 'aqui tem coragem') {
-        await obs.send(
-            'SetSourceSettings', {
-                sourceName: ENV.ObsSourceName,
-                sourceSettings: {
-                    local_file: 'D:\\OBS\\App.Twitch.ChatBotMedia\\videos\\coragem.mp4'
-                }
-            });
+    if (!self) {
+        const matched = WORDS.find(word => message.toLowerCase().includes(word));
+        if (matched) {
+            const phrase = PHRASES[Math.floor(Math.random() * 1000) % PHRASES.length];
+            waitFor = (Math.random() * 10 + 5) * 1000;
+            setTimeout(() => global.irc.say(channel, phrase.replace("{0}", `@${tags["display-name"]}`)), waitFor);
+        }
     }
 }
 
 async function main() {
-    global.obs = await connectToObs();
     global.irc = await connectToTwitchChat();
     global.irc.on('message', onMessage.bind(global));
 }
